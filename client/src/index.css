@@ -1,0 +1,36 @@
+:root {
+  font-family: system-ui, -apple-system, sans-serif;
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.app {
+  text-align: center;
+  padding: 2rem;
+}
+
+.card {
+  background: #1e293b;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+.hint {
+  opacity: 0.6;
+  font-size: 0.9rem;
+}
+
+code {
+  background: #334155;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
