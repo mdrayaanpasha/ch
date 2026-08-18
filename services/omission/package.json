@@ -1,7 +1,7 @@
 {
-  "name": "orchestrator",
+  "name": "omission-svc",
   "version": "1.0.0",
-  "description": "Master orchestrator: fan-out to bias detectors + debate/judge",
+  "description": "Omission-bias detector microservice (retrieval-backed)",
   "type": "module",
   "main": "src/index.js",
   "scripts": {
@@ -9,7 +9,6 @@
     "dev": "node --watch src/index.js"
   },
   "dependencies": {
-    "cheerio": "^1.0.0",
     "cors": "^2.8.5",
     "express": "^4.19.2"
   }

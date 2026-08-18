@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bias</title>
+<style>
+  :root {
+    --bg: #fafafa; --panel: #ffffff; --ink: #16171a; --ink2: #6b6f76;
+    --line: #ececec; --line2: #e2e2e2;
+    --accent: #16171a;
+    --good: #12a150; --warn: #d98b00; --bad: #e5484d;
+    --r: 16px;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0b0c; --panel: #141416; --ink: #f2f2f3; --ink2: #9a9ba0;
+      --line: #232326; --line2: #2c2c30; --accent: #f2f2f3;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased; letter-spacing: -0.01em;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 56px 24px 96px; }
+
+  /* Header */
+  .brand { font-size: 13px; font-weight: 600; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink2); margin-bottom: 28px; }
+
+  /* Input */
+  .composer {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--r);
+    box-shadow: var(--shadow); padding: 6px 6px 6px 18px; display: flex; align-items: flex-end; gap: 8px;
+    transition: border-color .15s;
+  }
+  .composer:focus-within { border-color: var(--line2); }
+  textarea {
+    flex: 1; border: 0; background: transparent; color: var(--ink); resize: none;
+    font: inherit; padding: 12px 0; max-height: 220px; min-height: 24px; line-height: 1.5;
+  }
+  textarea:focus { outline: none; }
+  textarea::placeholder { color: var(--ink2); }
+  .send {
+    flex: none; width: 40px; height: 40px; border-radius: 12px; border: 0; cursor: pointer;
+    background: var(--accent); color: var(--bg); display: grid; place-items: center;
+    transition: opacity .15s, transform .1s;
+  }
+  .send:hover { opacity: .85; }
+  .send:active { transform: scale(.94); }
+  .send:disabled { opacity: .35; cursor: default; }
+  .send svg { width: 18px; height: 18px; }
+  .subhint { color: var(--ink2); font-size: 13px; margin: 12px 2px 0; }
+
+  /* Loading */
+  .loading { display: none; align-items: center; gap: 12px; margin-top: 40px; color: var(--ink2); font-size: 14px; }
+  .loading.on { display: flex; }
+  .dots { display: inline-flex; gap: 4px; }
+  .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink2); animation: b 1.2s infinite ease-in-out; }
+  .dots i:nth-child(2){ animation-delay: .15s } .dots i:nth-child(3){ animation-delay: .3s }
+  @keyframes b { 0%,80%,100%{ opacity:.25; transform: translateY(0) } 40%{ opacity:1; transform: translateY(-3px) } }
+  .timer { margin-left: auto; font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink2); }
+
+  /* Result */
+  #out { margin-top: 44px; }
+  .hero { text-align: left; margin-bottom: 8px; }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink2); }
+  .verdict { font-size: 40px; font-weight: 680; letter-spacing: -0.03em; margin: 10px 0 2px; line-height: 1.05; }
+  .verdict .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 12px; vertical-align: middle; }
+  .d-bad { background: var(--bad); } .d-warn { background: var(--warn); } .d-good { background: var(--good); }
+  .t-bad { color: var(--bad); } .t-warn { color: var(--warn); } .t-good { color: var(--good); }
+  .rationale { color: var(--ink2); font-size: 16px; line-height: 1.6; margin: 16px 0 8px; max-width: 60ch; }
+  .cached { font-size: 12px; color: var(--ink2); }
+
+  /* Score bars */
+  .scores { margin: 32px 0 8px; }
+  .srow { display: grid; grid-template-columns: 92px 1fr 42px; align-items: center; gap: 14px; padding: 11px 0; }
+  .sname { font-size: 13px; font-weight: 600; text-transform: capitalize; color: var(--ink); }
+  .track { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
+  .fill { height: 100%; border-radius: 999px; transition: width .6s cubic-bezier(.2,.8,.2,1); }
+  .snum { font-size: 13px; color: var(--ink2); text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* Disclosure */
+  .disclosures { margin-top: 40px; border-top: 1px solid var(--line); }
+  details { border-bottom: 1px solid var(--line); }
+  summary {
+    list-style: none; cursor: pointer; padding: 18px 2px; display: flex; align-items: center;
+    justify-content: space-between; gap: 12px; font-size: 15px; font-weight: 550; color: var(--ink);
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary .chev { color: var(--ink2); transition: transform .2s; flex: none; }
+  details[open] summary .chev { transform: rotate(90deg); }
+  .meta { color: var(--ink2); font-size: 13px; font-weight: 400; margin-left: auto; padding-right: 4px; }
+  .body { padding: 4px 2px 24px; animation: fade .25s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; } }
+
+  .finding { padding: 14px 0; border-top: 1px solid var(--line); }
+  .finding:first-child { border-top: 0; }
+  .fhead { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+  .fname { font-weight: 650; text-transform: capitalize; }
+  .pill { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+  .p-bad{ background: rgba(229,72,77,.12); color: var(--bad);} .p-warn{ background: rgba(217,139,0,.14); color: var(--warn);} .p-good{ background: rgba(18,161,80,.12); color: var(--good);}
+  .fexpl { color: var(--ink); font-size: 14px; line-height: 1.6; }
+  .evi { margin: 10px 0 0; padding: 0; list-style: none; }
+  .evi li { color: var(--ink2); font-size: 13px; padding: 5px 0 5px 14px; border-left: 2px solid var(--line2); margin: 6px 0; font-style: italic; }
+
+  .round { padding: 16px 0; border-top: 1px solid var(--line); }
+  .round:first-child { border-top: 0; }
+  .rlabel { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink2); margin-bottom: 8px; }
+  .rtext { white-space: pre-wrap; font-size: 14px; line-height: 1.65; color: var(--ink); }
+
+  .err { margin-top: 32px; padding: 18px; border-radius: var(--r); background: rgba(229,72,77,.08);
+    border: 1px solid rgba(229,72,77,.25); color: var(--bad); font-size: 14px; }
+  .err b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">Bias&nbsp;·&nbsp;Debate</div>
+
+  <div class="composer">
+    <textarea id="input" rows="1" placeholder="Paste text or a link to analyze…"></textarea>
+    <button class="send" id="go" title="Analyze (⌘↵)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+  <div class="subhint" id="hint">Text or a news URL. Detectors + an AI debate reach a verdict.</div>
+
+  <div class="loading" id="loading">
+    <span class="dots"><i></i><i></i><i></i></span>
+    <span id="loadmsg">Analyzing…</span>
+    <span class="timer" id="timer">0.0s</span>
+  </div>
+
+  <div id="out"></div>
+</div>
+
+<script>
+const API = "http://localhost:5050/api/analyze";
+const $ = (id) => document.getElementById(id);
+const out = $("out"), btn = $("go"), input = $("input"), loading = $("loading"), hint = $("hint");
+const timerEl = $("timer"), loadmsg = $("loadmsg");
+let timerId = null, t0 = 0, lastElapsed = 0;
+
+function startTimer() {
+  t0 = performance.now();
+  const tick = () => {
+    const s = (performance.now() - t0) / 1000;
+    timerEl.textContent = s.toFixed(1) + "s";
+    loadmsg.textContent = s < 1 ? "Analyzing…"
+      : s < 12 ? "Checking for a cached verdict…"
+      : "Fresh analysis — running the AI debate…";
+  };
+  tick();
+  timerId = setInterval(tick, 100);
+}
+function stopTimer() {
+  if (timerId) clearInterval(timerId), timerId = null;
+  lastElapsed = (performance.now() - t0) / 1000;
+}
+
+const esc = (s) => String(s ?? "").replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const tone = (n) => n >= 7 ? "bad" : n >= 4 ? "warn" : "good";
+const vTone = (v) => v === "biased" ? "bad" : v === "neutral" ? "good" : "warn";
+const cap = (s) => String(s||"").charAt(0).toUpperCase() + String(s||"").slice(1);
+
+// autosize textarea
+input.addEventListener("input", () => { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 220) + "px"; });
+
+async function analyze() {
+  const value = input.value.trim();
+  if (!value) { input.focus(); return; }
+  out.innerHTML = ""; btn.disabled = true; loading.classList.add("on"); hint.style.display = "none";
+  startTimer();
+  try {
+    const res = await fetch(API, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ input: value }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || ("HTTP " + res.status));
+    render(data);
+  } catch (e) {
+    out.innerHTML = '<div class="err">Couldn’t analyze: ' + esc(e.message) +
+      '<br><br>Make sure the services are running — <b>npm run dev</b> in the project, then try again.</div>';
+  } finally {
+    stopTimer();
+    btn.disabled = false; loading.classList.remove("on");
+  }
+}
+
+function render(d) {
+  const v = d.verdict || {};
+  const vt = vTone(v.overallVerdict);
+  const label = { biased: "Biased", neutral: "Neutral", "mostly-neutral": "Mostly neutral" }[v.overallVerdict] || cap(v.overallVerdict || "Unknown");
+
+  let h = "";
+
+  // HERO — the answer, first and big.
+  h += '<div class="hero">';
+  h += '<div class="eyebrow">Verdict</div>';
+  h += '<div class="verdict"><span class="dot d-'+vt+'"></span><span class="t-'+vt+'">'+esc(label)+'</span></div>';
+  if (v.rationale) h += '<p class="rationale">'+esc(v.rationale)+'</p>';
+  const secs = lastElapsed.toFixed(lastElapsed < 10 ? 1 : 0);
+  h += '<div class="cached">' + (d.cached
+      ? '⚡ Cached · returned in ' + secs + 's'
+      : 'Fresh analysis · ' + secs + 's') + '</div>';
+  h += '</div>';
+
+  // SCORES — quick scan of the three axes.
+  const per = Array.isArray(v.perBias) ? v.perBias : [];
+  if (per.length) {
+    h += '<div class="scores">';
+    for (const p of per) {
+      const n = Number(p.finalSeverity) || 0, t = tone(n);
+      h += '<div class="srow"><div class="sname">'+esc(cap(p.bias.toLowerCase()))+'</div>'+
+           '<div class="track"><div class="fill" style="width:'+(n*10)+'%;background:var(--'+t+')"></div></div>'+
+           '<div class="snum">'+n+'</div></div>';
+    }
+    h += '</div>';
+  }
+
+  // DISCLOSURES — everything else, hidden until clicked.
+  h += '<div class="disclosures">';
+
+  // Findings
+  const findings = d.findings || [];
+  h += '<details><summary>Why<span class="meta">'+findings.length+' detectors</span><span class="chev">›</span></summary><div class="body">';
+  for (const f of findings) {
+    h += '<div class="finding"><div class="fhead"><span class="fname">'+esc(cap(f.bias))+'</span>';
+    if (f.unavailable) { h += '<span class="pill p-bad">unavailable</span></div>'; }
+    else {
+      const t = tone(Number(f.severity)||0);
+      h += '<span class="pill p-'+t+'">'+esc(f.severity)+'/10</span></div>';
+      h += '<div class="fexpl">'+esc(f.explanation)+'</div>';
+      if (f.evidence && f.evidence.length)
+        h += '<ul class="evi">'+f.evidence.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>';
+    }
+    h += '</div>';
+  }
+  h += '</div></details>';
+
+  // Per-bias judge notes
+  if (per.length) {
+    h += '<details><summary>Judge’s notes<span class="meta">per axis</span><span class="chev">›</span></summary><div class="body">';
+    for (const p of per) {
+      h += '<div class="finding"><div class="fhead"><span class="fname">'+esc(cap(p.bias.toLowerCase()))+'</span>'+
+           '<span class="pill p-'+tone(Number(p.finalSeverity)||0)+'">final '+esc(p.finalSeverity)+'/10</span></div>'+
+           '<div class="fexpl">'+esc(p.note)+'</div></div>';
+    }
+    h += '</div></details>';
+  }
+
+  // Debate transcript
+  const rounds = d.debate?.transcript || [];
+  h += '<details><summary>The debate<span class="meta">'+rounds.length+' rounds</span><span class="chev">›</span></summary><div class="body">';
+  for (const r of rounds) {
+    h += '<div class="round"><div class="rlabel">'+esc(r.round)+'</div><div class="rtext">';
+    h += r.entries ? r.entries.map(e=>esc(e.statement)).join("\n\n") : esc(r.content);
+    h += '</div></div>';
+  }
+  h += '</div></details>';
+
+  h += '</div>';
+  out.innerHTML = h;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+btn.addEventListener("click", analyze);
+input.addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); analyze(); }
+});
+</script>
+</body>
+</html>

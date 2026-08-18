@@ -1,7 +1,7 @@
 {
-  "name": "orchestrator",
+  "name": "voiceweb-svc",
   "version": "1.0.0",
-  "description": "Master orchestrator: fan-out to bias detectors + debate/judge",
+  "description": "VoiceWeb — voice-first web assistant for blind / low-vision users (intent router + skills)",
   "type": "module",
   "main": "src/index.js",
   "scripts": {

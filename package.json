@@ -1,0 +1,20 @@
+{
+  "name": "ch-bias-detector",
+  "version": "1.0.0",
+  "description": "Distributed bias-detection system: 3 detector microservices + orchestrator (debate/judge) over local Ollama",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && npm --prefix server install && npm --prefix services/omission install && npm --prefix services/framing install && npm --prefix services/fear install && npm --prefix services/voiceweb install && npm --prefix client install",
+    "dev": "concurrently -n orch,omission,framing,fear -c cyan,magenta,yellow,green \"npm --prefix server run dev\" \"npm --prefix services/omission run dev\" \"npm --prefix services/framing run dev\" \"npm --prefix services/fear run dev\"",
+    "voiceweb": "concurrently -n voiceweb,client -c cyan,green \"npm --prefix services/voiceweb run dev\" \"npm --prefix client run dev\"",
+    "start": "concurrently -n orch,omission,framing,fear -c cyan,magenta,yellow,green \"npm --prefix server start\" \"npm --prefix services/omission start\" \"npm --prefix services/framing start\" \"npm --prefix services/fear start\""
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "redis": "^4.7.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
